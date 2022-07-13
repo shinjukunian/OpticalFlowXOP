@@ -26,7 +26,7 @@
 #include <opencv2/video.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "XOPStandardHeaders.h"// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
+#include "Helper.hpp"// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
 #include "OpticalFlow.h"
 
 
@@ -184,50 +184,12 @@ ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
         Mat flow((int) width,(int) height, CV_32FC2);
         
         waveHndl outWave_X;
-        char outWaveName[MAX_OBJ_NAME+1];
-        CountInt outDimensionSizes[MAX_DIMENSIONS+1] = {0};
-       
-        strcpy(outWaveName, "M_FarnebackOpticalFlow_X");
-        outDimensionSizes[ROWS] = width;
-        outDimensionSizes[COLUMNS] = height;
-        outDimensionSizes[LAYERS] = frames -1;
-        
-    
-        if(result=MDMakeWave(&outWave_X, outWaveName, NULL, outDimensionSizes, NT_FP32, 1)){
-            return result;
-        }
-
         waveHndl outWave_Y;
-        strcpy(outWaveName, "M_FarnebackOpticalFlow_Y");
-        if (result=MDMakeWave(&outWave_Y, outWaveName, NULL, outDimensionSizes, NT_FP32, 1)){
+        if (result=makeOutputWaves(images, &outWave_X, "M_FarnebackOpticalFlow_X", &outWave_Y, "M_FarnebackOpticalFlow_Y")){
             return result;
         }
         
-        double deltaX;
-        double x0;
-        char units[MAX_UNIT_CHARS+1];
         
-        for(int i=0;i<2;i+=1){
-            if(result=MDGetWaveScaling(images, i, &deltaX, &x0)){
-                return result;
-            }
-            if(result = MDSetWaveScaling(outWave_X, i, &deltaX, &x0)){
-                return result;
-            }
-            if(result = MDSetWaveScaling(outWave_Y, i, &deltaX, &x0)){
-                return result;
-            }
-            if(result=MDGetWaveUnits(images, i, units)){
-                return result;
-            }
-            if(result = MDSetWaveUnits(outWave_X, i, units)){
-                return result;
-            }
-            if(result = MDSetWaveUnits(outWave_Y, i, units)){
-                return result;
-            }
-            
-        }
 
         BCInt outputDataOffset;
         

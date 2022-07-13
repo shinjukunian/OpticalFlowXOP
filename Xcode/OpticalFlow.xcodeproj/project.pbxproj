@@ -10,6 +10,8 @@
 		5AA1724E287EAA9500F758E7 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AA1724D287EAA9500F758E7 /* Accelerate.framework */; };
 		5AA17250287EAAEF00F758E7 /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AA1724F287EAAEF00F758E7 /* OpenCL.framework */; };
 		5ACE4B3A287F1AA700C95D11 /* opencv2.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5ACE4B39287F1AA700C95D11 /* opencv2.xcframework */; };
+		5ACE4B3D287F1BBE00C95D11 /* Helper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5ACE4B3B287F1BBE00C95D11 /* Helper.cpp */; };
+		5ACE4B3E287F1BBE00C95D11 /* Helper.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 5ACE4B3C287F1BBE00C95D11 /* Helper.hpp */; };
 		8948C28E1C33105D0022A6A1 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8948C28C1C33105D0022A6A1 /* Cocoa.framework */; };
 		899E0F07197ED7D00037E65E /* OpticalFlow_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 32BAE0B30371A71500C91783 /* OpticalFlow_Prefix.pch */; };
 		899E0F08197ED7D00037E65E /* OpticalFlow.h in Headers */ = {isa = PBXBuildFile; fileRef = 89A72B5510904BD5003AE340 /* OpticalFlow.h */; };
@@ -39,6 +41,8 @@
 		5AA1724D287EAA9500F758E7 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		5AA1724F287EAAEF00F758E7 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = System/Library/Frameworks/OpenCL.framework; sourceTree = SDKROOT; };
 		5ACE4B39287F1AA700C95D11 /* opencv2.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = opencv2.xcframework; path = ../openCV/opencv2.xcframework; sourceTree = "<group>"; };
+		5ACE4B3B287F1BBE00C95D11 /* Helper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Helper.cpp; path = ../Helper.cpp; sourceTree = "<group>"; };
+		5ACE4B3C287F1BBE00C95D11 /* Helper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = Helper.hpp; path = ../Helper.hpp; sourceTree = "<group>"; };
 		8948C28C1C33105D0022A6A1 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /Work/XOPDev/IgorXOPs7/OpticalFlow/Xcode/../../../../../System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		894DD919209D060A00405BAA /* OpticalFlow.rc */ = {isa = PBXFileReference; lastKnownFileType = text; name = OpticalFlow.rc; path = ../OpticalFlow.rc; sourceTree = "<group>"; };
 		894DD91A209D060A00405BAA /* OpticalFlowWinCustom.rc */ = {isa = PBXFileReference; lastKnownFileType = text; name = OpticalFlowWinCustom.rc; path = ../OpticalFlowWinCustom.rc; sourceTree = "<group>"; };
@@ -112,6 +116,8 @@
 				32BAE0B30371A71500C91783 /* OpticalFlow_Prefix.pch */,
 				89A72B5510904BD5003AE340 /* OpticalFlow.h */,
 				AA5D4C57057E889500B0C55B /* OpticalFlow.cpp */,
+				5ACE4B3B287F1BBE00C95D11 /* Helper.cpp */,
+				5ACE4B3C287F1BBE00C95D11 /* Helper.hpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -140,6 +146,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5ACE4B3E287F1BBE00C95D11 /* Helper.hpp in Headers */,
 				899E0F07197ED7D00037E65E /* OpticalFlow_Prefix.pch in Headers */,
 				899E0F08197ED7D00037E65E /* OpticalFlow.h in Headers */,
 			);
@@ -222,6 +229,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				899E0F0C197ED7D00037E65E /* OpticalFlow.cpp in Sources */,
+				5ACE4B3D287F1BBE00C95D11 /* Helper.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

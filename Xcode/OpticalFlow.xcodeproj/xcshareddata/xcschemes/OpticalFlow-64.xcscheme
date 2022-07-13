@@ -42,6 +42,7 @@
       allowLocationSimulation = "YES">
       <PathRunnable
          runnableDebuggingMode = "0"
+         BundleIdentifier = "com.wavemetrics.igorpromach"
          FilePath = "/Applications/Igor Pro 9 Folder/Igor64.app">
       </PathRunnable>
    </LaunchAction>
@@ -51,6 +52,11 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
+      <PathRunnable
+         runnableDebuggingMode = "0"
+         BundleIdentifier = "com.wavemetrics.igorpromach"
+         FilePath = "/Applications/Igor Pro 9 Folder/Igor64.app">
+      </PathRunnable>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
