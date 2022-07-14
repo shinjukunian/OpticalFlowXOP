@@ -79,7 +79,7 @@ int makeOutputWaves(waveHndl inWave, waveHndl *outX, const char *xName, waveHndl
 
 
 
-int calculateOpticalFlow_Farneback(waveHndl inWave, waveHndl outX, waveHndl outY, FarnebackParams params){
+int calculateOpticalFlow_Farneback(waveHndl *inWave, waveHndl *outX, waveHndl *outY, Params *params){
     
     BCInt dataOffset;
     
@@ -89,7 +89,7 @@ int calculateOpticalFlow_Farneback(waveHndl inWave, waveHndl outX, waveHndl outY
     int numDimensions;
     CountInt dimensionSizes[MAX_DIMENSIONS+1];
     
-    if(result=MDGetWaveDimensions(inWave, &numDimensions, dimensionSizes)){
+    if(result=MDGetWaveDimensions(*inWave, &numDimensions, dimensionSizes)){
         return result;
     }
     
@@ -98,7 +98,7 @@ int calculateOpticalFlow_Farneback(waveHndl inWave, waveHndl outX, waveHndl outY
     CountInt height=dimensionSizes[COLUMNS];
     CountInt frames=dimensionSizes[LAYERS];
     
-    if (result=MDAccessNumericWaveData(inWave,kMDWaveAccessMode0,&dataOffset)){
+    if (result=MDAccessNumericWaveData(*inWave,kMDWaveAccessMode0,&dataOffset)){
         return result;
     }
     
@@ -107,13 +107,13 @@ int calculateOpticalFlow_Farneback(waveHndl inWave, waveHndl outX, waveHndl outY
     Mat flow((int) width,(int) height, CV_32FC2);
     
         
-    if (result=MDAccessNumericWaveData(outX,kMDWaveAccessMode0,&dataOffset)){
+    if (result=MDAccessNumericWaveData(*outX,kMDWaveAccessMode0,&dataOffset)){
         return result;
     }
     
     float *fp_X = (float*)((char*)(*outX) + dataOffset);
     
-    if (result=MDAccessNumericWaveData(outY,kMDWaveAccessMode0,&dataOffset)){
+    if (result=MDAccessNumericWaveData(*outY,kMDWaveAccessMode0,&dataOffset)){
         return result;
     }
     
@@ -141,7 +141,8 @@ int calculateOpticalFlow_Farneback(waveHndl inWave, waveHndl outX, waveHndl outY
         cv::Mat next = cv::Mat((int) width,(int) height,CV_8UC1,offset);
 
         
-        calcOpticalFlowFarneback(prev, next, flow, params.pyr_scale, params.levels, params.winSize, params.iterations, params.poly_n, params.poly_sigma, params.flags);
+        
+        calcOpticalFlowFarneback(prev, next, flow,  params->values[0].val.dval, params->values[1].val.ival, params->values[2].val.ival, params->values[3].val.ival, params->values[4].val.ival, params->values[5].val.dval, params->values[6].val.ival);
 
         
         split(flow, flow_parts);
@@ -173,3 +174,69 @@ int calculateOpticalFlow_Farneback(waveHndl inWave, waveHndl outX, waveHndl outY
     return result;
     
 }
+
+
+/*
+ Params params;
+ params.count = 7;
+ 
+ ParamItem items[7];
+ params.values = items;
+ params.values[0].type = ParamItem::is_double;
+ params.values[1].type = ParamItem::is_int;
+ params.values[2].type = ParamItem::is_int;
+ params.values[3].type = ParamItem::is_int;
+ params.values[4].type = ParamItem::is_int;
+ params.values[5].type = ParamItem::is_double;
+ params.values[6].type = ParamItem::is_int;
+ 
+ 
+
+ if (p->PSFlagEncountered) {
+     // Parameter: p->pyr_scale
+     params.values[0].val.dval=p->pyr_scale;
+ }
+ else{
+     params.values[0].val.dval=0.5;
+ }
+
+ if (p->LFlagEncountered) {
+     // Parameter: p->levels
+     params.values[1].val.ival=p->levels;
+ }
+ else{
+     params.values[1].val.ival=3;
+ }
+
+ if (p->WFlagEncountered) {
+     // Parameter: p->winsize
+     params.values[2].val.ival=p->winsize;
+ }
+ else{
+     params.values[2].val.ival=15;
+ }
+
+ if (p->NFlagEncountered) {
+     // Parameter: p->iterations
+     params.values[3].val.ival=p->iterations;
+ }
+ else{
+     params.values[3].val.ival=3;
+ }
+
+ if (p->GFlagEncountered) {
+     params.values[6].val.ival=OPTFLOW_FARNEBACK_GAUSSIAN;
+ }
+ 
+ if (p->POLYFlagEncountered) {
+     params.values[4].val.ival=p->poly_n;
+     params.values[5].val.dval=p->poly_sigma;
+         // Parameter: p->poly_n
+
+         // Parameter: p->poly_sigma
+ }
+ else{
+     params.values[4].val.ival=5;
+     params.values[5].val.dval=1.2;
+ }
+ */
