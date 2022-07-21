@@ -1,31 +1,8 @@
-/*	OpticalFlow.c -- A sample Igor external operation
+/*	OpticalFlow.c -- Calculates Optical Flow Fields using openCV
 
-	OpticalFlow is a very simple Igor XOP (external operation) designed to show you how to get
-	started writing XOPs.
-	
-	The syntax for OpticalFlow is:
-		OpticalFlow wave
-	
-	It adds 1 to the specified wave.
-	It generates an error message if the wave is complex or text (not numeric).
-	
-	HR, 091021
-		Updated for 64-bit compatibility.
-
-	HR, 2013-02-08
-		Updated for Xcode 4 compatibility. Changed to use XOPMain instead of main.
-		As a result the XOP now requires Igor Pro 6.20 or later.
-
-	HR, 2018-05-04
-		Recompiled with XOP Toolkit 8 which supports long object names.
-		As a result the XOP now requires Igor Pro 8.00 or later.
 */
-
-
 #include <opencv2/core.hpp> //order of imports important
 #include <opencv2/video.hpp>
-#include <opencv2/opencv.hpp>
-
 #include "Helper.hpp"// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
 #include "OpticalFlow.h"
 
@@ -35,14 +12,11 @@
 using namespace cv;
 using namespace std;
 
+// Operation template: OpticalFlowFarneback /PS=number:pyr_scale /L=number:levels /W=number:winsize /N=number:iterations /G /POLY={number:poly_n, number:poly_sigma} /PXL wave:waveH
 
-
-
-// Operation template: FarnebackOpticalFlow /PS=number:pyr_scale /L=number:levels /W=number:winsize /N=number:iterations /G wave:waveH
-
-// Runtime param structure for FarnebackOpticalFlow operation.
+// Runtime param structure for OpticalFlowFarneback operation.
 #pragma pack(2)    // All structures passed to Igor are two-byte aligned.
-struct FarnebackOpticalFlowRuntimeParams {
+struct OpticalFlowFarnebackRuntimeParams {
     // Flag parameters.
 
     // Parameters for /PS flag group.
@@ -75,6 +49,10 @@ struct FarnebackOpticalFlowRuntimeParams {
     double poly_sigma;
     int POLYFlagParamsSet[2];
 
+    // Parameters for /PXL flag group.
+    int PXLFlagEncountered;
+    // There are no fields for this group because it has no parameters.
+
     // Main parameters.
 
     // Parameters for simple main group #0.
@@ -86,12 +64,12 @@ struct FarnebackOpticalFlowRuntimeParams {
     int calledFromFunction;                    // 1 if called from a user function, 0 otherwise.
     int calledFromMacro;                    // 1 if called from a macro, 0 otherwise.
 };
-typedef struct FarnebackOpticalFlowRuntimeParams FarnebackOpticalFlowRuntimeParams;
-typedef struct FarnebackOpticalFlowRuntimeParams* FarnebackOpticalFlowRuntimeParamsPtr;
+typedef struct OpticalFlowFarnebackRuntimeParams OpticalFlowFarnebackRuntimeParams;
+typedef struct OpticalFlowFarnebackRuntimeParams* OpticalFlowFarnebackRuntimeParamsPtr;
 #pragma pack()    // Reset structure alignment to default.
 
 extern "C" int
-ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
+ExecuteOpticalFlowFarneback(OpticalFlowFarnebackRuntimeParamsPtr p)
 {
     int err = 0;
 
@@ -140,6 +118,10 @@ ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
         p->poly_sigma = 1.2;
     }
     
+    if (p->PXLFlagEncountered) {
+        
+    }
+    
     if (p->waveHEncountered) {
         
         waveHndl images=p->waveH;
@@ -176,6 +158,7 @@ ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
         if (result=MDAccessNumericWaveData(images,kMDWaveAccessMode0,&dataOffset)){
             return result;
         }
+        
         double* dp = (double*)((char*)(*images) + dataOffset);
         unsigned char* ucp = (unsigned char*)dp;
         
@@ -185,10 +168,20 @@ ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
         
         waveHndl outWave_X;
         waveHndl outWave_Y;
-        if (result=makeOutputWaves(images, &outWave_X, "M_FarnebackOpticalFlow_X", &outWave_Y, "M_FarnebackOpticalFlow_Y")){
+        if (result=makeOutputWaves(images, &outWave_X, "M_FarnebackOpticalFlow_X", &outWave_Y, "M_FarnebackOpticalFlow_Y", p->PXLFlagEncountered)){
             return result;
         }
         
+        double deltaX_X;
+        double deltaX_Y;
+        double x0;
+        
+        if(result=MDGetWaveScaling(images, 0, &deltaX_X, &x0)){
+            return result;
+        }
+        if(result=MDGetWaveScaling(images, 1, &deltaX_Y, &x0)){
+            return result;
+        }
         
 
         BCInt outputDataOffset;
@@ -219,6 +212,7 @@ ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
         unsigned char *offset = &ucp[0];
         
         
+        
         for(frame=0;frame<frames-1;frame+=1){
             
             cv::Mat prev = cv::Mat((int) width,(int) height,CV_8UC1,offset);
@@ -229,8 +223,15 @@ ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
             
             calcOpticalFlowFarneback(prev, next, flow, p->pyr_scale, p->levels, p->winsize, p->iterations, p->poly_n, p->poly_sigma, flags);
 
-            
             split(flow, flow_parts);
+            
+            if (p->PXLFlagEncountered == 0) {
+                flow_parts[0] *= deltaX_X;
+                flow_parts[1] *= deltaX_Y;
+            }
+            
+            
+            
             
             //the conversion to poalr is strange, it works better when doing this in igor for visualization
 //            cartToPolar(flow_parts[0], flow_parts[1], magnitude, angle, false);
@@ -262,17 +263,17 @@ ExecuteFarnebackOpticalFlow(FarnebackOpticalFlowRuntimeParamsPtr p)
 }
 
 static int
-RegisterFarnebackOpticalFlow(void)
+RegisterOpticalFlowFarneback(void)
 {
     const char* cmdTemplate;
     const char* runtimeNumVarList;
     const char* runtimeStrVarList;
 
-    // NOTE: If you change this template, you must change the FarnebackOpticalFlowRuntimeParams structure as well.
-    cmdTemplate = "FarnebackOpticalFlow /PS=number:pyr_scale /L=number:levels /W=number:winsize /N=number:iterations /G /POLY={number:poly_n, number:poly_sigma} wave:waveH";
+    // NOTE: If you change this template, you must change the OpticalFlowFarnebackRuntimeParams structure as well.
+    cmdTemplate = "OpticalFlowFarneback /PS=number:pyr_scale /L=number:levels /W=number:winsize /N=number:iterations /G /POLY={number:poly_n, number:poly_sigma} /PXL wave:waveH";
     runtimeNumVarList = "";
     runtimeStrVarList = "";
-    return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(FarnebackOpticalFlowRuntimeParams), (void*)ExecuteFarnebackOpticalFlow, 0);
+    return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(OpticalFlowFarnebackRuntimeParams), (void*)ExecuteOpticalFlowFarneback, 0);
 }
 
 
@@ -282,7 +283,7 @@ RegisterOperations(void)		// Register any operations with Igor.
 	int result;
 	
 	// Register OpticalFlow operation.
-	if (result = RegisterFarnebackOpticalFlow())
+	if (result = RegisterOpticalFlowFarneback())
 		return result;
 	
 	// There are no more operations added by this XOP.

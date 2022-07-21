@@ -32,7 +32,7 @@ resource 'XOPI' (1100) {
 
 resource 'XOPC' (1100) {
 	{
-		"FarnebackOpticalFlow",								// Name of operation.
+		"OpticalFlowFarneback",								// Name of operation.
 		waveOP+XOPOp+compilableOp,			// Operation's category.
 	}
 };

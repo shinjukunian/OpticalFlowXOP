@@ -24,8 +24,8 @@ typedef struct Params{
     ParamItem *values;
 }Params;
 
-int makeOutputWaves(waveHndl inWave, waveHndl *outX, const char *xName, waveHndl *outY, const char *yName);
+int makeOutputWaves(waveHndl inWave, waveHndl *outX, const char *xName, waveHndl *outY, const char *yName, bool usePixel);
 
-int calculateOpticalFlow_Farneback(waveHndl *inWave, waveHndl *outX, waveHndl *outY, Params *params);
+//int calculateOpticalFlow_Farneback(waveHndl *inWave, waveHndl *outX, waveHndl *outY, Params *params);
 
 #endif /* Helper_hpp */
