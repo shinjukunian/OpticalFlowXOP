@@ -3,7 +3,7 @@
 */
 #include <opencv2/core.hpp> //order of imports important
 #include <opencv2/video.hpp>
-#include "Helper.hpp"// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
+#include "OpticalFlowCalculation.hpp"// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
 #include "OpticalFlow.h"
 
 
@@ -73,49 +73,67 @@ ExecuteOpticalFlowFarneback(OpticalFlowFarnebackRuntimeParamsPtr p)
 {
     int err = 0;
 
-    // Flag parameters.
-    int flags=0;
+    Params params;
+    params.count = 7;
+    
+    ParamItem items[7];
+    params.values = items;
+    params.values[0].type = ParamItem::is_double;
+    params.values[1].type = ParamItem::is_int;
+    params.values[2].type = ParamItem::is_int;
+    params.values[3].type = ParamItem::is_int;
+    params.values[4].type = ParamItem::is_int;
+    params.values[5].type = ParamItem::is_double;
+    params.values[6].type = ParamItem::is_int;
+    
+    params.method=OpticalFlowMethodFarneback;
 
     if (p->PSFlagEncountered) {
         // Parameter: p->pyr_scale
+        params.values[0].val.dval=p->pyr_scale;
     }
     else{
-        p->pyr_scale = 0.5;
+        params.values[0].val.dval=0.5;
     }
 
     if (p->LFlagEncountered) {
         // Parameter: p->levels
+        params.values[1].val.ival=p->levels;
     }
     else{
-        p->levels = 3;
+        params.values[1].val.ival=3;
     }
 
     if (p->WFlagEncountered) {
         // Parameter: p->winsize
+        params.values[2].val.ival=p->winsize;
     }
     else{
-        p->winsize=15;
+        params.values[2].val.ival=15;
     }
 
     if (p->NFlagEncountered) {
         // Parameter: p->iterations
+        params.values[3].val.ival=p->iterations;
     }
     else{
-        p->iterations=3;
+        params.values[3].val.ival=3;
     }
 
     if (p->GFlagEncountered) {
-        flags = OPTFLOW_FARNEBACK_GAUSSIAN;
+        params.values[6].val.ival=OPTFLOW_FARNEBACK_GAUSSIAN;
     }
     
     if (p->POLYFlagEncountered) {
+        params.values[4].val.ival=p->poly_n;
+        params.values[5].val.dval=p->poly_sigma;
             // Parameter: p->poly_n
 
             // Parameter: p->poly_sigma
     }
     else{
-        p->poly_n = 5;
-        p->poly_sigma = 1.2;
+        params.values[4].val.ival=5;
+        params.values[5].val.dval=1.2;
     }
     
     if (p->PXLFlagEncountered) {
@@ -129,134 +147,8 @@ ExecuteOpticalFlowFarneback(OpticalFlowFarnebackRuntimeParamsPtr p)
             return NULL_WAVE_OP;
         }
         
-        int type=WaveType(images);
-        if(type != (NT_I8 | NT_UNSIGNED)){
-            return NT_FNOT_AVAIL;
-        }
-        
-        int numDimensions;
-        CountInt dimensionSizes[MAX_DIMENSIONS+1];
-        int result;
-        
-        if(result=MDGetWaveDimensions(images, &numDimensions, dimensionSizes)){
-            return result;
-        }
-        
-        if(numDimensions != 3){
-            return kNeeds3DWave;
-        }
-        
-        CountInt width=dimensionSizes[ROWS];
-        CountInt height=dimensionSizes[COLUMNS];
-        CountInt frames=dimensionSizes[LAYERS];
-        
-        if(frames < 2){
-            return kBadNumberOfLayers;
-        }
-        BCInt dataOffset;
-    
-        if (result=MDAccessNumericWaveData(images,kMDWaveAccessMode0,&dataOffset)){
-            return result;
-        }
-        
-        double* dp = (double*)((char*)(*images) + dataOffset);
-        unsigned char* ucp = (unsigned char*)dp;
-        
-        IndexInt frame;
-        
-        Mat flow((int) width,(int) height, CV_32FC2);
-        
-        waveHndl outWave_X;
-        waveHndl outWave_Y;
-        if (result=makeOutputWaves(images, &outWave_X, "M_FarnebackOpticalFlow_X", &outWave_Y, "M_FarnebackOpticalFlow_Y", p->PXLFlagEncountered)){
-            return result;
-        }
-        
-        double deltaX_X;
-        double deltaX_Y;
-        double x0;
-        
-        if(result=MDGetWaveScaling(images, 0, &deltaX_X, &x0)){
-            return result;
-        }
-        if(result=MDGetWaveScaling(images, 1, &deltaX_Y, &x0)){
-            return result;
-        }
-        
-
-        BCInt outputDataOffset;
-        
-        if (result=MDAccessNumericWaveData(outWave_X,kMDWaveAccessMode0,&outputDataOffset)){
-            return result;
-        }
-        
-        float *fp_X = (float*)((char*)(*outWave_X) + outputDataOffset);
-        
-        if (result=MDAccessNumericWaveData(outWave_Y,kMDWaveAccessMode0,&outputDataOffset)){
-            return result;
-        }
-        
-        float *fp_Y = (float*)((char*)(*outWave_Y) + outputDataOffset);
-        
-        float *offset_out_X;
-        float *offset_out_Y;
-        
-        //for debugging
-//        unsigned char* ucp_out = (unsigned char*)dp_Out;
-//        unsigned char *offset_out_magnitude = &ucp_out[0];
-//        unsigned char *offset_out_angle = &ucp_out[outDimensionSizes[ROWS] * outDimensionSizes[COLUMNS] * outDimensionSizes[LAYERS]];
-        
-        Mat flow_parts[2];
-//        Mat magnitude, angle;
-        
-        unsigned char *offset = &ucp[0];
-        
-        
-        
-        for(frame=0;frame<frames-1;frame+=1){
+        return calculateOpticalFlow(images, &params, p->PXLFlagEncountered);
             
-            cv::Mat prev = cv::Mat((int) width,(int) height,CV_8UC1,offset);
-            
-            offset = &ucp[width * height * (frame+1)];
-            cv::Mat next = cv::Mat((int) width,(int) height,CV_8UC1,offset);
-
-            
-            calcOpticalFlowFarneback(prev, next, flow, p->pyr_scale, p->levels, p->winsize, p->iterations, p->poly_n, p->poly_sigma, flags);
-
-            split(flow, flow_parts);
-            
-            if (p->PXLFlagEncountered == 0) {
-                flow_parts[0] *= deltaX_X;
-                flow_parts[1] *= deltaX_Y;
-            }
-            
-            
-            
-            
-            //the conversion to poalr is strange, it works better when doing this in igor for visualization
-//            cartToPolar(flow_parts[0], flow_parts[1], magnitude, angle, false);
-            
-            offset_out_X = &fp_X[width * height * frame];
-            offset_out_Y = &fp_Y[width * height * frame];
-
-//            offset_out_angle = &fp[outDimensionSizes[ROWS] * outDimensionSizes[COLUMNS] * outDimensionSizes[LAYERS] + width * height * frame];
-            
-//            memcpy(offset_out_magnitude, magnitude.data, width * height * sizeof(float));
-//            memcpy(offset_out_angle, angle.data, width * height * sizeof(float));
-            
-            memcpy(offset_out_X, flow_parts[0].data, width * height * sizeof(float));
-            memcpy(offset_out_Y, flow_parts[1].data, width * height * sizeof(float));
-            
-        }
-        
-        dp=NULL;
-        ucp=NULL;
-        fp_Y=NULL;
-        fp_X=NULL;
-        offset=NULL;
-        offset_out_Y=NULL;
-        offset_out_X=NULL;
-    
     }
 
     return err;
@@ -277,14 +169,112 @@ RegisterOpticalFlowFarneback(void)
 }
 
 
+
+// Operation template: OpticalFlowDIS /PRST=number:preset /PXL wave:waveH
+
+// Runtime param structure for OpticalFlowDIS operation.
+#pragma pack(2)    // All structures passed to Igor are two-byte aligned.
+struct OpticalFlowDISRuntimeParams {
+    // Flag parameters.
+
+    // Parameters for /PRST flag group.
+    int PRSTFlagEncountered;
+    double preset;
+    int PRSTFlagParamsSet[1];
+
+    // Parameters for /PXL flag group.
+    int PXLFlagEncountered;
+    // There are no fields for this group because it has no parameters.
+
+    // Main parameters.
+
+    // Parameters for simple main group #0.
+    int waveHEncountered;
+    waveHndl waveH;
+    int waveHParamsSet[1];
+
+    // These are postamble fields that Igor sets.
+    int calledFromFunction;                    // 1 if called from a user function, 0 otherwise.
+    int calledFromMacro;                    // 1 if called from a macro, 0 otherwise.
+};
+typedef struct OpticalFlowDISRuntimeParams OpticalFlowDISRuntimeParams;
+typedef struct OpticalFlowDISRuntimeParams* OpticalFlowDISRuntimeParamsPtr;
+#pragma pack()    // Reset structure alignment to default.
+
+extern "C" int
+ExecuteOpticalFlowDIS(OpticalFlowDISRuntimeParamsPtr p)
+{
+    int err = 0;
+    
+    Params params;
+    params.count = 1;
+    
+    ParamItem items[1];
+    params.values = items;
+    params.values[0].type = ParamItem::is_int;
+    params.method=OpticalFlowMethodDIS;
+    
+    // Flag parameters.
+
+    if (p->PRSTFlagEncountered) {
+        if(p->preset < 3 && p->preset >= 0){
+            params.values[0].val.ival = (int) p->preset;
+        }
+        else{
+            return kParameterOutOfRange;
+        }
+        
+    }
+    else{
+        params.values[0].val.ival = 1;
+    }
+
+    if (p->PXLFlagEncountered) {
+        
+    }
+
+    
+    if(p->waveHEncountered){
+        waveHndl images=p->waveH;
+        if(images == NULL){
+            return NULL_WAVE_OP;
+        }
+        
+        return calculateOpticalFlow(images, &params, p->PXLFlagEncountered);
+    }
+
+
+    return err;
+}
+
+static int
+RegisterOpticalFlowDIS(void)
+{
+    const char* cmdTemplate;
+    const char* runtimeNumVarList;
+    const char* runtimeStrVarList;
+
+    // NOTE: If you change this template, you must change the OpticalFlowDISRuntimeParams structure as well.
+    cmdTemplate = "OpticalFlowDIS /PRST=number:preset /PXL wave:waveH";
+    runtimeNumVarList = "";
+    runtimeStrVarList = "";
+    return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(OpticalFlowDISRuntimeParams), (void*)ExecuteOpticalFlowDIS, 0);
+}
+
+
+
 static int
 RegisterOperations(void)		// Register any operations with Igor.
 {
 	int result;
 	
 	// Register OpticalFlow operation.
-	if (result = RegisterOpticalFlowFarneback())
+    if (result = RegisterOpticalFlowFarneback()){
 		return result;
+    }
+    if (result = RegisterOpticalFlowDIS()){
+        return result;
+    }
 	
 	// There are no more operations added by this XOP.
 		

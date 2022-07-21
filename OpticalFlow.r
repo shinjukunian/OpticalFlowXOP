@@ -34,6 +34,9 @@ resource 'XOPC' (1100) {
 	{
 		"OpticalFlowFarneback",								// Name of operation.
 		waveOP+XOPOp+compilableOp,			// Operation's category.
+        
+        "OpticalFlowDIS",                                // Name of operation.
+        waveOP+XOPOp+compilableOp,            // Operation's category.
 	}
 };
 
