@@ -29,12 +29,12 @@ function makeOpticalFlowOverlay(xDisplacement, yDisplacement, images, threshold,
 	ControlBar 50
 	
 	Slider slider_opticalFlow,pos={65,10.00},size={300,15.00},proc=SliderProc_opticalFlowOverlay
-	Slider slider_opticalFlow,limits={0,dimsize(images,2)-1,0},value=0,vert=0,ticks=0
+	Slider slider_opticalFlow,limits={0,dimsize(images,2)-1,0},value=1,vert=0,ticks=0
 	SetVariable setvar_opticalFlowFrame pos={10,10},proc=SetVarProc_opticalFlow,value= _NUM:1,limits={0,dimsize(images,2)-1,1}
 	SetVariable setvar_opticalFlowResolution title="Scale",size={80,20}, pos={10,30},proc=SetVarProc_opticalFlow,value= _NUM:scaleFactor,limits={0,dimsize(images,1)/4,1}
 	SetVariable setvar_opticalFlowMinDisplacement,pos={105,30.00},size={60.00,14.00},proc=SetVarProc_opticalFlow
 	SetVariable setvar_opticalFlowMinDisplacement,title="Min"
-	SetVariable setvar_opticalFlowMinDisplacement,limits={0,dimsize(images,1)/4,0.1},value=_NUM:1
+	SetVariable setvar_opticalFlowMinDisplacement,limits={0,dimsize(images,1)/4,0.1},value=_NUM:0
 	
 	
 	
