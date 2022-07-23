@@ -10,7 +10,15 @@ On Windows, we have to dynamically link against the `opencv_world<version>.dll` 
 
 
 ##Usage
-The XOP provides Dense Inverse Search (DIS) optical flow and Farneback optical flow via the `OpticalFlowDIS` and `OpticalFlowFarneback` Igor Pro operations. Please see `Optical Flow.ihf` for details.
+The XOP provides Dense Inverse Search (DIS) optical flow and Farneback optical flow via the `OpticalFlowDIS` and `OpticalFlowFarneback` Igor Pro operations. Please see `Optical Flow.ihf`  and the sample experiment `OpticalFlow.pxp`for details.
+
+##Sample
+
+![Beads Displacement](./images/images.gif)
+
+![Flow](./images/flow.jpg)
+
+
 
 ## Dependencies
 

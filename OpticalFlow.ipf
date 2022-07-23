@@ -3,7 +3,71 @@
 #pragma DefaultTab={3,20,4}		// Set default tab width in Igor Pro 9 and later
 #include <ImageSlider>
 
+// This function draws the optical flow field of an image stack as color-coded arrows.
+//xDisplacement, yDisplacement ar the outputs of the optical flow calculation
+//images is the image stack
+//threshold is the minimum displacement for which arrows should be drawn. 0 is a good starting value.
+//scaleFactor determines by how much to downscale the optical flow field for display. 
+//While dense optical flow provides the displacement of every pixel in the image, this results in very crowded plots.
+//Using a scale factor of 20 would result in arrows being drawn for 15x15 pixel areas for a 300x300 pixel image.
 
+function makeOpticalFlowOverlay(xDisplacement, yDisplacement, images, threshold, scaleFactor)
+	wave xDisplacement, yDisplacement, images
+	variable threshold, scaleFactor
+
+	Display /W=(319,102,766,599)
+	AppendImage images
+	ModifyImage $nameofwave(images) ctab= {*,*,Grays,0}
+	ModifyGraph margin(left)=28,margin(bottom)=28,margin(top)=28,margin(right)=28,width={Plan,1,bottom,left}
+	ModifyGraph mode=3
+
+	ModifyGraph mirror=2
+	ModifyGraph noLabel=2
+	ModifyGraph standoff=0
+	ModifyGraph axThick=0
+	SetAxis/A/R left
+	ControlBar 50
+	
+	Slider slider_opticalFlow,pos={65,10.00},size={300,15.00},proc=SliderProc_opticalFlowOverlay
+	Slider slider_opticalFlow,limits={0,dimsize(images,2)-1,0},value=0,vert=0,ticks=0
+	SetVariable setvar_opticalFlowFrame pos={10,10},proc=SetVarProc_opticalFlow,value= _NUM:1,limits={0,dimsize(images,2)-1,1}
+	SetVariable setvar_opticalFlowResolution title="Scale",size={80,20}, pos={10,30},proc=SetVarProc_opticalFlow,value= _NUM:scaleFactor,limits={0,dimsize(images,1)/4,1}
+	SetVariable setvar_opticalFlowMinDisplacement,pos={105,30.00},size={60.00,14.00},proc=SetVarProc_opticalFlow
+	SetVariable setvar_opticalFlowMinDisplacement,title="Min"
+	SetVariable setvar_opticalFlowMinDisplacement,limits={0,dimsize(images,1)/4,0.1},value=_NUM:1
+	
+	
+	
+	duplicate /free /rmd=[][][0] yDisplacement rWave
+	rwave=sqrt(xDisplacement[p][q][0]^2+yDisplacement[p][q][0]^2)
+	variable maxD=wavemax(rWave)
+	
+	SetVariable setvar_opticalFlowMaxDisplacement,pos={180,30.00},size={60.00,14.00},proc=SetVarProc_opticalFlow
+	SetVariable setvar_opticalFlowMaxDisplacement,title="Max"
+	SetVariable setvar_opticalFlowMaxDisplacement,limits={0,dimsize(images,0.1),1},value=_NUM:maxD
+	
+	makearrowWave(xDisplacement, yDisplacement,1,images,scalefactor, minDisplacement=0, maxDisplacement=maxD)
+	wave xWave
+	wave yWave
+	wave colorWave
+	wave arrowWave
+	
+	appendtograph yWave vs xWave
+	ModifyGraph mode=3
+	ModifyGraph zColor(yWave)={colorWave,*,*,Rainbow}
+	ModifyGraph arrowMarker(yWave)={arrowWave,1,10,0.5,0}
+	string uD="xD:"+getwavesDataFolder(xDisplacement,2)+";yD:"+getwavesDataFolder(yDisplacement,2)
+	ud+=";threshold:"+num2str(threshold) + ";"
+	ud+="scale:"+num2str(scaleFactor)+";"
+	setwindow kwTopWin userdata(OpticalFlow) = uD
+	
+	ColorScale/C/N=text0/F=0/A=RC/X=5.00/Y=0.00/E trace=yWave
+	ColorScale/C/N=text0/B=1/A=RT/X=-1.89/Y=12.43/E=0 heightPct=20
+	ColorScale/C/N=text0/X=0.00/Y=0.00
+	ColorScale/C/N=text0/G=(48059,48059,48059)
+
+	
+end
 
 
 function makeArrowWave(xDisplacement,yDisplacement,sliceIDX, imageWave,scaleFactor,[minDisplacement,maxDisplacement,arrowLength])
@@ -97,7 +161,7 @@ Function SliderProc_opticalFlowOverlay(sa) : SliderControl
 			if( sa.eventCode & 1 ) // value set
 				Variable curval = sa.curval
 				setvariable setvar_opticalFlowFrame value=_NUM:round(curval)
-				updateOverlayView(sa.win,curval)
+				updateOverlayView(sa.win,round(curval))
 
 			endif
 			break
@@ -132,64 +196,7 @@ static function updateOverlayView(graphName, frame)
 end
 
 
-function makeOpticalFlowOverlay(xDisplacement, yDisplacement, images, threshold, scaleFactor)
-	wave xDisplacement, yDisplacement, images
-	variable threshold, scaleFactor
 
-	Display /W=(319,102,766,599)
-	AppendImage images
-	ModifyImage $nameofwave(images) ctab= {*,*,Grays,0}
-	ModifyGraph margin(left)=28,margin(bottom)=28,margin(top)=28,margin(right)=28,width={Plan,1,bottom,left}
-	ModifyGraph mode=3
-
-	ModifyGraph mirror=2
-	ModifyGraph noLabel=2
-	ModifyGraph standoff=0
-	ModifyGraph axThick=0
-	SetAxis/A/R left
-	ControlBar 50
-	
-	Slider slider_opticalFlow,pos={65,10.00},size={300,15.00},proc=SliderProc_opticalFlowOverlay
-	Slider slider_opticalFlow,limits={0,dimsize(images,2)-1,0},value=0,vert=0,ticks=0
-	SetVariable setvar_opticalFlowFrame pos={10,10},proc=SetVarProc_opticalFlow,value= _NUM:0,limits={0,dimsize(images,2)-1,1}
-	SetVariable setvar_opticalFlowResolution title="Scale",size={80,20}, pos={10,30},proc=SetVarProc_opticalFlow,value= _NUM:scaleFactor,limits={0,dimsize(images,1)/4,1}
-	SetVariable setvar_opticalFlowMinDisplacement,pos={105,30.00},size={60.00,14.00},proc=SetVarProc_opticalFlow
-	SetVariable setvar_opticalFlowMinDisplacement,title="Min"
-	SetVariable setvar_opticalFlowMinDisplacement,limits={0,dimsize(images,1)/4,0.1},value=_NUM:0
-	
-	
-	
-	duplicate /free /rmd=[][][0] yDisplacement rWave
-	rwave=sqrt(xDisplacement[p][q][0]^2+yDisplacement[p][q][0]^2)
-	variable maxD=wavemax(rWave)
-	
-	SetVariable setvar_opticalFlowMaxDisplacement,pos={180,30.00},size={60.00,14.00},proc=SetVarProc_opticalFlow
-	SetVariable setvar_opticalFlowMaxDisplacement,title="Max"
-	SetVariable setvar_opticalFlowMaxDisplacement,limits={0,dimsize(images,0.1),1},value=_NUM:maxD
-	
-	makearrowWave(xDisplacement, yDisplacement,1,images,scalefactor, minDisplacement=0, maxDisplacement=maxD)
-	wave xWave
-	wave yWave
-	wave colorWave
-	wave arrowWave
-	
-	appendtograph yWave vs xWave
-	ModifyGraph mode=3
-	ModifyGraph zColor(yWave)={colorWave,*,*,Rainbow}
-	ModifyGraph arrowMarker(yWave)={arrowWave,1,10,0.5,0}
-	string uD="xD:"+getwavesDataFolder(xDisplacement,2)+";yD:"+getwavesDataFolder(yDisplacement,2)
-	ud+=";threshold:"+num2str(threshold) + ";"
-	ud+="scale:"+num2str(scaleFactor)+";"
-	setwindow kwTopWin userdata(OpticalFlow) = uD
-	
-	ColorScale/C/N=text0/F=0/A=RC/X=5.00/Y=0.00/E trace=yWave
-	ColorScale/C/N=text0/B=1/A=RT/X=-1.89/Y=12.43/E=0 heightPct=20
-	ColorScale/C/N=text0/X=0.00/Y=0.00
-	ColorScale/C/N=text0/G=(48059,48059,48059)
-	makearrowWave(xDisplacement, yDisplacement,0,images,scalefactor, minDisplacement=0, maxDisplacement=maxD)
-
-	
-end
 
 
 function renderOverlayFrames(graphName)
@@ -235,3 +242,38 @@ Function SetVarProc_opticalFlow(sva) : SetVariableControl
 
 	return 0
 End
+
+
+function loadImages()
+
+	variable refnum
+	String fileFilters = "Image Files (*.png,*.tif,*.jpeg):.png,.tif,.jpeg;"
+	fileFilters += "All Files:.*;"
+	open /D /R /mult=1 refnum
+
+	string outputPaths = S_fileName
+
+	if (strlen(outputPaths) == 0)
+		Print "Cancelled"
+	else
+		Variable numFilesSelected = ItemsInList(outputPaths, "\r")
+		Variable i
+		string loadedWaves=""
+		for(i=0; i<numFilesSelected; i+=1)
+			String path = StringFromList(i, outputPaths, "\r")
+			imageload path
+			wave loaded=$stringfromlist(0,S_waveNames)
+			if(waveexists(loaded))
+				Redimension/N=(-1,-1,3) loaded
+				imagetransform rgb2gray loaded
+				wave M_RGB2Gray
+				killwaves loaded
+				concatenate {M_RGB2Gray}, loadedImages
+			endif
+			
+		endfor
+		
+		
+	endif
+
+end
