@@ -27,8 +27,9 @@ END
 
 1100 XOPC							// Describes operations that the XOP adds to IGOR.
 BEGIN
-	"OpticalFlow\0",
+	"OpticalFlowFarneback\0",
 	waveOp | XOPOp | compilableOp,
-
+	"OpticalFlowDIS\0",
+	waveOp | XOPOp | compilableOp,
 	"\0"							// NOTE: NULL required to terminate the resource.
 END

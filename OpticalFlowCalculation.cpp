@@ -54,7 +54,7 @@ int calculateOpticalFlow(waveHndl inWave, Params *params, bool usePixel){
     
     unsigned char* ucp = (unsigned char*)((unsigned char*)(*inWave) + dataOffset);
     
-    Mat flow;//((int) width,(int) height, CV_32FC2);
+    
     
     waveHndl outX;
     waveHndl outY;
@@ -119,8 +119,14 @@ int calculateOpticalFlow(waveHndl inWave, Params *params, bool usePixel){
     
     IndexInt frame;
     
-    cv::Ptr<DenseOpticalFlow> algorithm;
     
+
+    Mat flow; //DIS prefers uninitialized, Farneback wants an initialized mat
+    if (params->method == OpticalFlowMethodFarneback) {
+        flow=cv::Mat((int) width,(int) height, CV_32FC2);
+    }
+
+    cv::Ptr<DenseOpticalFlow> algorithm;
     if (params->method == OpticalFlowMethodDIS) {
         algorithm = DISOpticalFlow::create(params->values[0].val.ival);
     }
